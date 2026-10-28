@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Daily Spell - Clon Completo</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <button id="menu-toggle" class="menu-toggle" onclick="toggleMenu()" aria-label="Abrir menú">☰</button>
+
+    <div id="sidebar-overlay" class="sidebar-overlay" onclick="closeMenu()"></div>
+
+    <aside id="sidebar" class="sidebar" aria-label="Menú principal">
+        <div class="sidebar-header">
+            <h2>Menú</h2>
+            <button class="sidebar-close" onclick="closeMenu()" aria-label="Cerrar menú">✕</button>
+        </div>
+        <div class="sidebar-content">
+            <div id="levels-list"></div>
+
+            <button class="book-open-btn" onclick="openBookModal()">📖 Leer historia</button>
+
+            <details class="sidebar-section" id="how-to-play-section">
+                <summary>Cómo jugar</summary>
+                <div class="how-to-play">
+                    <p><strong>Objetivo:</strong> Descifra el conjuro reconstruyendo la frase oculta en la cuadrícula inferior.</p>
+                    <p><strong>Colocar letras:</strong> Selecciona una casilla y escribe con el teclado, o haz clic en una letra del banco superior (solo si pertenece a la misma columna).</p>
+                    <p><strong>Navegación:</strong> Flechas <code>←</code> <code>→</code> <code>↑</code> <code>↓</code> para moverte. <code>Espacio</code> avanza una casilla, <code>Shift + Espacio</code> retrocede. <code>Tab</code> salta a la siguiente palabra, <code>Shift + Tab</code> a la anterior.</p>
+                    <p><strong>Corregir:</strong> <code>Backspace</code> borra la letra actual. Doble clic sobre una letra la devuelve al banco.</p>
+                    <p><strong>Atajos:</strong> pulsa <code>Enter</code> para comprobar la solución y <code>Shift + Enter</code> para auto-rellenar, sin necesidad de hacer clic en los botones.</p>
+                    <p><strong>Botones:</strong></p>
+                    <ul>
+                        <li><strong>Mezclar libres</strong>: reordena las letras no usadas.</li>
+                        <li><strong>Auto-rellenar</strong> (o <code>Shift + Enter</code>): rellena columnas donde solo quede una letra distinta pendiente.</li>
+                        <li><strong>Resetear</strong>: devuelve todas las letras al banco.</li>
+                        <li><strong>Comprobar</strong> (o tecla <code>Enter</code>): verifica si el conjuro es correcto.</li>
+                        <li><strong>Pista</strong>: muestra casillas correctas o la solución completa.</li>
+                    </ul>
+                    <p><strong>Progreso:</strong> se guarda automáticamente en tu navegador. Si cierras o recargas, retomás donde lo dejaste.</p>
+                </div>
+            </details>
+
+            <button class="autocomplete-btn" onclick="openCodeModal()">Completar todos los niveles</button>
+            <button class="reset-progress-btn" onclick="confirmResetProgress()">Reiniciar progreso</button>
+        </div>
+    </aside>
+
+    <header>
+        <h1>The Daily Spell</h1>
+        <div class="meta-info" id="current-date">Vol. 1 • 2026</div>
+    </header>
+
+    <div id="board-container">
+        <div id="pool-grid-container"></div>
+        <div class="divider-line"></div>
+        <div id="target-grid-container"></div>
+    </div>
+
+    <div class="controls">
+        <button onclick="shuffleRemainingPool()">Mezclar Libres</button>
+        <button onclick="autoFillTrivialColumns()">Auto-rellenar</button>
+        <button onclick="resetAllLettersToPool()">Resetear</button>
+        <button onclick="checkSolution()">Comprobar Hechizo</button>
+        <button id="hint-btn" onclick="toggleHintPanel()">Pista</button>
+    </div>
+
+    <div id="hint-panel-wrapper" class="hint-panel-wrapper">
+        <div class="hint-panel-inner">
+            <div class="hint-panel">
+                <button onclick="showCorrectCells()">Mostrar casillas correctas</button>
+                <button onclick="showFullSolution()">Mostrar solución completa</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="story-section">
+        <h3 id="story-title">✨ ¡Hechizo Resuelto! ✨</h3>
+        <div id="story-list"></div>
+        <div class="story-actions">
+            <button id="next-level-btn" onclick="loadNextLevel()">
+                Siguiente Nivel
+                <span class="next-level-meta" id="next-level-meta"></span>
+            </button>
+            <button id="replay-btn" onclick="replayCurrentLevel()" style="display:none;">Reiniciar nivel</button>
+            <button id="return-btn" onclick="returnToProgress()" style="display:none;">Volver</button>
+        </div>
+    </div>
+
+    <div id="code-modal" class="code-modal-overlay" role="dialog" aria-modal="true"
+         onclick="if(event.target===this)closeCodeModal()">
+        <div class="code-modal">
+            <h3>Introduce el código</h3>
+            <p class="code-modal-hint">Introduce el código de 6 dígitos para desbloquear todos los niveles.</p>
+            <input type="text" id="code-input" class="code-input"
+                   maxlength="6" inputmode="numeric" pattern="[0-9]*"
+                   placeholder="······" autocomplete="off"
+                   oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,6)">
+            <div class="code-modal-actions">
+                <button onclick="closeCodeModal()">Cancelar</button>
+                <button onclick="confirmCode()">Confirmar</button>
+            </div>
+            <div id="code-error" class="code-error" style="display:none;">Código incorrecto</div>
+        </div>
+    </div>
+
+    <div id="book-modal" class="book-modal-overlay" role="dialog" aria-modal="true"
+         onclick="if(event.target===this)closeBookModal()">
+        <div class="book-modal">
+            <div class="book-header">
+                <h2>La Historia del Reino</h2>
+                <button class="book-close" onclick="closeBookModal()" aria-label="Cerrar libro">✕</button>
+            </div>
+            <div class="book-content" id="book-content"></div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
